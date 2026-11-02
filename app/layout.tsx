@@ -24,10 +24,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="flex h-full flex-col overflow-hidden">
         <TRPCReactProvider>
-          <div className="flex min-h-full flex-1 justify-center bg-zinc-50 px-4 py-12 font-sans dark:bg-black sm:py-16">
-            <main className="w-full max-w-3xl">{children}</main>
+          <div className="flex min-h-0 flex-1 justify-center bg-zinc-50 px-4 py-12 font-sans dark:bg-black sm:py-16">
+            <main className="flex min-h-0 w-full max-w-3xl flex-col">
+              {children}
+            </main>
           </div>
         </TRPCReactProvider>
       </body>

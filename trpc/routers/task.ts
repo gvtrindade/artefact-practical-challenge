@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { taskStore, type Task } from "@/trpc/task-store";
 import { createTRPCRouter, publicProcedure } from "@/trpc/init";
+import { TASK_PAGE_SIZE } from "../task-properties";
 
 const idSchema = z
   .string({ error: "Task id is required" })
@@ -45,6 +46,11 @@ const taskByIdSchema = z.object({
   id: idSchema,
 });
 
+const listTasksSchema = z.object({
+  limit: z.number().int().min(1).max(100).default(TASK_PAGE_SIZE),
+  cursor: z.string().optional(),
+});
+
 function getTaskOrThrow(id: string): Task {
   const task = taskStore.get(id);
 
@@ -58,11 +64,49 @@ function getTaskOrThrow(id: string): Task {
   return task;
 }
 
+function compareTasks(
+  a: Pick<Task, "id" | "createdAt">,
+  b: Pick<Task, "id" | "createdAt">,
+) {
+  return b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id);
+}
+
+function getTaskCursor(task: Task) {
+  return `${task.createdAt}|${task.id}`;
+}
+
+function parseTaskCursor(
+  cursor: string,
+): Pick<Task, "id" | "createdAt"> | null {
+  const separator = cursor.indexOf("|");
+
+  if (separator === -1) return null;
+
+  return {
+    createdAt: cursor.slice(0, separator),
+    id: cursor.slice(separator + 1),
+  };
+}
+
 export const taskRouter = createTRPCRouter({
-  list: publicProcedure.query(() => {
-    return Array.from(taskStore.values()).sort((a, b) =>
-      b.createdAt.localeCompare(a.createdAt),
-    );
+  list: publicProcedure.input(listTasksSchema).query(({ input }) => {
+    const tasks = Array.from(taskStore.values()).sort(compareTasks);
+    const cursor = input.cursor ? parseTaskCursor(input.cursor) : null;
+    const cursorIndex = cursor
+      ? tasks.findIndex((task) => compareTasks(task, cursor) > 0)
+      : 0;
+    const startIndex = cursorIndex === -1 ? tasks.length : cursorIndex;
+    const items = tasks.slice(startIndex, startIndex + input.limit);
+    const nextCursor =
+      startIndex + input.limit < tasks.length && items.length > 0
+        ? getTaskCursor(items[items.length - 1])
+        : null;
+
+    return {
+      items,
+      nextCursor,
+      totalCount: tasks.length,
+    };
   }),
 
   byId: publicProcedure.input(taskByIdSchema).query(({ input }) => {
