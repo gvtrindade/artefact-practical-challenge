@@ -2,6 +2,8 @@
 
 A small task management app with create, edit, delete, cursor-based pagination, and infinite scrolling. The list is rendered from a server-prefetched first page and lazily loads more tasks as you scroll.
 
+Check it out at [tasks.trindade.dev](https://tasks.trindade.dev)
+
 ## Stack
 
 - **Next.js 16** (App Router) with React 19
