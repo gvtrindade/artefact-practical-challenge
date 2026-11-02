@@ -13,7 +13,7 @@ export const { TRPCProvider, useTRPC, useTRPCClient } =
 
 let browserQueryClient: QueryClient | undefined;
 
-const baseUrl = process.env.BASE_URL;
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
 
 function getQueryClient() {
   if (typeof window === "undefined") {
